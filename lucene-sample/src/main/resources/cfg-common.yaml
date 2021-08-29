@@ -1,0 +1,23 @@
+index-directory: indices
+forums:
+  - name: f1
+    index_name: f1
+    charset: UTF-8
+    ### the unit time is ms
+    interval-fixed: 300
+    interval-flexible: 200
+    ### forum -> category -> post/thread
+    forum-categories-selector:
+    category-post-list-selector:
+    category-post-inline-title-selector:
+    category-post-inline-cdate-selector:
+    category-post-inline-edate-selector:
+    category-next-page-selector:
+    domains:
+      - 10.0.0.1
+      - 10.0.0.2
+  - name: f2
+    index-name: f2
+    domains:
+      - 10.0.0.1
+      - 10.0.0.2
