@@ -22,6 +22,9 @@
         <log4j2.version>2.13.3</log4j2.version>
         <spring.boot.version>2.3.12.RELEASE</spring.boot.version>
         <apache.lucene.version>8.9.0</apache.lucene.version>
+        <lombok.version>1.18.20</lombok.version>
+        <mockito.version>3.12.1</mockito.version>
+        <jackson.fasterxml.version>2.12.3</jackson.fasterxml.version>
     </properties>
 
     <dependencyManagement>
@@ -81,6 +84,23 @@
 <!--                <artifactId>lucene-memory</artifactId>-->
 <!--                <version>${apache.lucene.version}</version>-->
 <!--            </dependency>-->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.fasterxml.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
