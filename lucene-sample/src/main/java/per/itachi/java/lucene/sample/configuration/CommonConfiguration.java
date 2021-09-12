@@ -3,6 +3,7 @@ package per.itachi.java.lucene.sample.configuration;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,7 +30,7 @@ public class CommonConfiguration {
 
     @Bean("configurationContext")
     public ConfigurationContext loadForumProperties() {
-        ForumCollectionProperties properties = reader.readFromResource("/cfg-common.yaml");
+        ForumCollectionProperties properties = reader.readFromResource("cfg-common.yaml");
         if (Objects.isNull(properties)) {
             throw new RuntimeException("Failed to load yaml configuration. ");
         }
@@ -51,7 +52,7 @@ public class CommonConfiguration {
         }
 
         ConfigurationContext context = new ConfigurationContext();
-        context.setIndexDirectory(properties.getIndexDirectory());
+        BeanUtils.copyProperties(properties, context);
         context.setMapForumProperties(forumPropertiesMap);
         return context;
     }

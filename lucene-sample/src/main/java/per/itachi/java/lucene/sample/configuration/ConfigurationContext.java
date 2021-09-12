@@ -12,7 +12,13 @@ import java.util.Map;
 @ToString
 public class ConfigurationContext {
 
+    private String htmlDirectory;
+
     private String indexDirectory;
+
+    private int bufferReaderSize;
+
+    private int bufferWriterSize;
 
     private Map<String, ForumProperties> mapForumProperties;
 

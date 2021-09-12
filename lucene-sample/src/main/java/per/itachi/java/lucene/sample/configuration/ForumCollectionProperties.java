@@ -12,8 +12,17 @@ import java.util.List;
 @ToString
 public class ForumCollectionProperties {
 
+    @JsonProperty("html-directory")
+    private String htmlDirectory;
+
     @JsonProperty("index-directory")
     private String indexDirectory;
+
+    @JsonProperty("buffer-reader-size")
+    private int bufferReaderSize;
+
+    @JsonProperty("buffer-writer-size")
+    private int bufferWriterSize;
 
     private List<ForumProperties> forums;
 }

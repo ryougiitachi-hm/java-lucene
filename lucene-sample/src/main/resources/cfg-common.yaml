@@ -1,21 +1,39 @@
+html-directory: pages
 index-directory: indices
+buffer-reader-size: 524288
+buffer-writer-size: 524288
 forums:
-  - name: f1
-    index_name: f1
+  - name: itheima
+    index-name: f1
     charset: UTF-8
     ### the unit time is ms
     interval-fixed: 300
     interval-flexible: 200
+    domains:
+      - bbs.itheima.com
+      - 10.0.0.2
     ### forum -> category -> post/thread
     forum-categories-selector:
-    category-post-list-selector:
-    category-post-inline-title-selector:
+    category-post-list-selector: div.wp.time_wp.cl > div.boardnav.cl > div.wp.inside_box.cl > div.forum-left.cl > div.mn > div.tl.bm.bmw > div.bm_c > form > table > tbody >tr > th.common.forumtit
+    category-post-inline-title-selector: a.s.xst
+    category-post-inline-url-selector: a.s.xst
     category-post-inline-cdate-selector:
     category-post-inline-edate-selector:
-    category-next-page-selector:
-    domains:
-      - 10.0.0.1
-      - 10.0.0.2
+    # simplified version
+    category-next-page-selector: "span#fd_page_bottom > div > a.nxt"
+    category-params:
+      - fid
+      - typeid
+    post-params:
+      - tid
+    headers:
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36"
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+      Accept-Encoding: "gzip, deflate"
+      Accept-Language: "en-GB,en-US;q=0.9,en;q=0.8"
+      Cache-Control: "no-cache"
+      Pragma: no-cache
+      Upgrade-Insecure-Requests: 1
   - name: f2
     index-name: f2
     domains:

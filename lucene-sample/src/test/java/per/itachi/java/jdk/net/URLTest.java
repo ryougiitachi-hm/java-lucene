@@ -12,8 +12,8 @@ public class URLTest {
 
     @Test
     public void testURL() throws MalformedURLException {
-        URL url = new URL("ftp://jkkjk.jjl.com/aj/b?ui=1&ui=1&ai=1&");
-        System.out.printf("url=%s, protocol=%s, host=%s, port=%s, path=%s, query=%s, defaultPort=%d %n",
-                url, url.getProtocol(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getDefaultPort());
+        URL url = new URL("ftp://jkkjk.jjl.com?ui=1&ui=1&ai=1&");
+        System.out.printf("url=%s, protocol=%s, host=%s, port=%s, path=%s, query=%s, defaultPort=%d, ref=%s %n",
+                url, url.getProtocol(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getDefaultPort(), url.getRef());
     }
 }

@@ -1,6 +1,7 @@
 package per.itachi.java.lucene.sample.persist;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -64,7 +65,7 @@ public class LuceneIndexManager implements CommonIndexManager {
         List<PostDocument> documentsToAdd = new LinkedList<>();
 
         // initialise analyzer.
-        Analyzer analyzer = new StandardAnalyzer();
+        Analyzer analyzer = new SmartChineseAnalyzer();
 
         // traverse list of the documents.
         try(IndexReader reader = DirectoryReader.open(FSDirectory.open(idxPath))) {

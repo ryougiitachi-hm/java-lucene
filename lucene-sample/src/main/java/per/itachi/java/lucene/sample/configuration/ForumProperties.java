@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -28,6 +29,8 @@ public class ForumProperties {
     @JsonProperty("interval-flexible")
     private int intervalFlexible;
 
+    private List<String> domains;
+
     @JsonProperty("forum-categories-selector")
     private String forumCategoriesSelector;
 
@@ -36,6 +39,9 @@ public class ForumProperties {
 
     @JsonProperty("category-post-inline-title-selector")
     private String categoryPostInlineTitleSelector;
+
+    @JsonProperty("category-post-inline-url-selector")
+    private String categoryPostInlineUrlSelector;
 
     @JsonProperty("category-post-inline-cdate-selector")
     private String categoryPostInlineCdateSelector;
@@ -46,5 +52,17 @@ public class ForumProperties {
     @JsonProperty("category-next-page-selector")
     private String categoryNextPageSelector;
 
-    private List<String> domains;
+    /**
+     * used to generate file name for category html
+     * */
+    @JsonProperty("category-params")
+    private List<String> categoryParams;
+
+    /**
+     * used to generate file name for post html
+     * */
+    @JsonProperty("post-params")
+    private List<String> postParams;
+
+    private Map<String, String> headers;
 }
