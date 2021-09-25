@@ -98,7 +98,7 @@ public class LuceneIndexManager implements CommonIndexManager {
         }
 
         logger.info("There are {} documents to delete, {} documents to add. ",
-                documentsToUpdate.size(), documentsToAdd);
+                documentsToUpdate.size(), documentsToAdd.size());
 
         Sort sortPostId = new Sort(new SortField(PostDocument.FLD_POST_ID, SortField.Type.LONG, false));
         IndexWriterConfig writerConfig = new IndexWriterConfig(analyzer);

@@ -24,6 +24,7 @@ forums:
     category-params:
       - fid
       - typeid
+      - page
     post-params:
       - tid
     headers:
