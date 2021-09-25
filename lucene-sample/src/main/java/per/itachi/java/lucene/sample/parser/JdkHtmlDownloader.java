@@ -36,6 +36,7 @@ public class JdkHtmlDownloader implements HtmlDownloader {
 
         // process
         try {
+            log.info("[Downloader] Downloading {}. ", toDownloadLink);
             URL url = new URL(toDownloadLink);
             HttpURLConnection connection = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             fillRequestHeaders(connection, url, properties.getHeaders());// request headers
@@ -61,6 +62,7 @@ public class JdkHtmlDownloader implements HtmlDownloader {
             }
             // handle post-download
             handleCompression(responseHeaders, outputPath);
+            log.info("[Downloader] Downloaded {}. ", toDownloadLink);
         }
         catch (MalformedURLException e) {
             log.error("[Downloader] Error occurred when downloading {}. ", toDownloadLink, e);
@@ -73,11 +75,11 @@ public class JdkHtmlDownloader implements HtmlDownloader {
     private void sleepForAntiProhibit(int fixed, int flexible) {
         try {
             long lInterval =  fixed + ThreadLocalRandom.current().nextInt(flexible);
-            log.debug("The current thread will sleep {} milliseconds.", lInterval);
+            log.debug("[Downloader] The current thread will sleep {} milliseconds.", lInterval);
             Thread.sleep(lInterval);
         }
         catch (InterruptedException e) {
-            log.error("Interrupted when anti-killing for downloading html. ", e);
+            log.error("[Downloader] Interrupted when anti-killing for downloading html. ", e);
         }
     }
 
@@ -98,7 +100,7 @@ public class JdkHtmlDownloader implements HtmlDownloader {
         if (CollectionUtils.isEmpty(contentEncodings)) {
             return;
         }
-        log.debug("Content-Encoding is {}. ", contentEncodings);
+        log.debug("[Downloader] Content-Encoding is {}. ", contentEncodings);
         Path compressedPath = Paths.get(String.join(".", outputPath.toString(), contentEncodings.get(0)));
         if (Files.exists(compressedPath)) {
             Files.delete(compressedPath);

@@ -1,5 +1,6 @@
 package per.itachi.java.lucene.sample.util;
 
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import per.itachi.java.lucene.sample.entity.html.UrlInfo;
 
@@ -21,7 +22,7 @@ public class CommonUtils {
             // paths
             List<String> paths = Collections.emptyList();
             if (StringUtils.hasText(strPaths) && strPaths.length() > 1) {
-                paths = Arrays.asList(strPaths.split("/"));
+                paths = Arrays.asList(strPaths.substring(1).split("/"));
             }
             // query
             String strQuery = url.getQuery();
@@ -34,10 +35,30 @@ public class CommonUtils {
                     mapParams.put(param.substring(0, idx), param.substring(idx + 1));
                 }
             }
+
+            // base uri
+            String strBaseUri;
+            if (url.getPort() <= 0) {
+                strBaseUri = String.format("%s://%s", url.getProtocol(), url.getHost());
+            }
+            else {
+                strBaseUri = String.format("%s://%s:%d", url.getProtocol(), url.getHost(), url.getPort());
+            }
+
+            // base relative uri
+            String strBaseRelativeUri = strBaseUri;
+            if (!CollectionUtils.isEmpty(paths) && paths.size() >= 2) {
+                StringBuilder builder = new StringBuilder(strBaseRelativeUri);
+                for(int i = 0, length = paths.size(); i < length - 1; ++i) {
+                    builder.append("/").append(paths.get(i));
+                }
+                strBaseRelativeUri = builder.toString();
+            }
+
             UrlInfo urlInfo = new UrlInfo();
             urlInfo.setHost(url.getHost());
-            urlInfo.setBaseUri(url.getPort() <= 0 ? String.format("%s://%s", url.getProtocol(), url.getHost())
-                    : String.format("%s://%s:%d", url.getProtocol(), url.getHost(), url.getPort()));
+            urlInfo.setBaseUri(strBaseUri);
+            urlInfo.setBaseRelativeUri(strBaseRelativeUri);
             urlInfo.setPaths(paths);
             urlInfo.setFileName(strFileName);
             urlInfo.setParams(mapParams);

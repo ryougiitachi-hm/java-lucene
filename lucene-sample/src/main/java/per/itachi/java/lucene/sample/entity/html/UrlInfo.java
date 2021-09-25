@@ -16,6 +16,8 @@ public class UrlInfo {
 
     private String baseUri;
 
+    private String baseRelativeUri;
+
     private List<String> paths;
 
     private String fileName;

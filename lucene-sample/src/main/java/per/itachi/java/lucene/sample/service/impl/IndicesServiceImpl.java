@@ -93,7 +93,7 @@ public class IndicesServiceImpl implements IndicesService {
             Path outputPath = Paths.get(context.getHtmlDirectory(), properties.getName(),
                     generateHtmlFileName(nextPageUrlInfo, properties.getCategoryParams()));
             downloader.download(nextPageUrl, outputPath, properties);
-            CategoryInfo categoryInfo = parser.parseCategory(outputPath, nextPageUrlInfo.getBaseUri(), properties);
+            CategoryInfo categoryInfo = parser.parseCategory(outputPath, urlInfo, properties);
             if (Objects.isNull(categoryInfo)) {
                 nextPageUrl = null;
             }
@@ -107,11 +107,17 @@ public class IndicesServiceImpl implements IndicesService {
         log.info("Start downloading forum [{}] posts from categories. ", properties.getName());
         // download and wrap post list.
         // not so good, to decouple PostInfo and PostDocument.
+        int countPages = 0;
         int countPosts = 0;
         List<PostDocument> postDocumentList = new LinkedList<>();
         for (CategoryInfo categoryInfo : categoryInfoList) {
+            ++ countPages;
+            int countPostsPerCategory = 0;
             for (PostInfo postInfo : categoryInfo.getPostInfos()) {
                 ++ countPosts;
+                ++ countPostsPerCategory;
+                log.info("[Service] Start processing category {} post {} total {}. ",
+                        countPages, countPostsPerCategory, countPosts);
                 UrlInfo postUrlInfo = CommonUtils.generateUrlInfo(postInfo.getAddressLink());
                 Path outputPath = Paths.get(context.getHtmlDirectory(), properties.getName(),
                         generateHtmlFileName(postUrlInfo, properties.getPostParams()));

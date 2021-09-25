@@ -11,11 +11,14 @@ import per.itachi.java.lucene.sample.configuration.ConfigurationContext;
 import per.itachi.java.lucene.sample.configuration.ForumProperties;
 import per.itachi.java.lucene.sample.entity.html.CategoryInfo;
 import per.itachi.java.lucene.sample.entity.html.PostInfo;
+import per.itachi.java.lucene.sample.entity.html.UrlInfo;
 import per.itachi.java.lucene.sample.util.Constants;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
@@ -30,17 +33,18 @@ public class JsoupForumParser implements ForumParser {
     private ConfigurationContext context;
 
     @Override
-    public CategoryInfo parseCategory(Path htmlPath, String baseUri, ForumProperties properties) {
+    public CategoryInfo parseCategory(Path htmlPath, UrlInfo urlInfo, ForumProperties properties) {
 
+        log.info("[Parser] Parsing html {}. ", htmlPath);
         try(InputStream bis = new BufferedInputStream(Files.newInputStream(htmlPath),
                 context.getBufferReaderSize())) {
             String nextPageUrl;
             List<PostInfo> postInfoList = new LinkedList<>();
 
-            Document document = Jsoup.parse(bis, properties.getCharset(), baseUri);
-            Elements elementPostList = document.select(properties.getCategoryPostListSelector());
+            Document document = Jsoup.parse(bis, properties.getCharset(), urlInfo.getBaseRelativeUri());
+            Elements elementsPostList = document.select(properties.getCategoryPostListSelector());
             int countCategoryLine = 0;// count of current category lines
-            for (Element post : elementPostList) {
+            for (Element post : elementsPostList) {
                 ++countCategoryLine;
                 Element elementTitle = post.selectFirst(properties.getCategoryPostInlineTitleSelector());
                 Element elementAddressUrl = post.selectFirst(properties.getCategoryPostInlineUrlSelector());
@@ -49,7 +53,7 @@ public class JsoupForumParser implements ForumParser {
                 PostInfo postInfo = new PostInfo();
                 postInfo.setTitle(Objects.nonNull(elementTitle) ? elementTitle.text() : "");
                 postInfo.setAddressLink(Objects.nonNull(elementAddressUrl)
-                        ? elementAddressUrl.attr(Constants.HTML_ATTR_A_HREF) : "");
+                        ? completeUrl(elementAddressUrl.attr(Constants.HTML_ATTR_A_HREF), urlInfo) : "");
                 postInfo.setCdate(Objects.nonNull(elementCdate) ? elementCdate.text() : "");
                 postInfo.setEdate(Objects.nonNull(elementEdate) ? elementEdate.text() : "");
                 postInfoList.add(postInfo);
@@ -60,8 +64,9 @@ public class JsoupForumParser implements ForumParser {
                 nextPageUrl = null;
             }
             else {
-                nextPageUrl = elementNextPage.attr(Constants.HTML_ATTR_A_HREF);
+                nextPageUrl = completeUrl(elementNextPage.attr(Constants.HTML_ATTR_A_HREF), urlInfo);
             }
+            log.info("[Parser] Parsed html {}. ", htmlPath);
 
             CategoryInfo categoryInfo = new CategoryInfo();
             categoryInfo.setPostInfos(postInfoList);
@@ -76,5 +81,25 @@ public class JsoupForumParser implements ForumParser {
 
     @Override
     public void parsePost(Path htmlPath) {
+    }
+
+    private String completeUrl(String addressLink, UrlInfo urlInfo) {
+        try {
+            new URL(addressLink);// check whether it is url or not.
+            return addressLink;
+        }
+        catch (MalformedURLException e) {
+            if (addressLink.startsWith("/")) { // absolute path
+                if (addressLink.length() >= 2) {
+                    return urlInfo.getBaseUri() + addressLink;
+                }
+                else {
+                    return urlInfo.getBaseUri();
+                }
+            }
+            else { // relative path
+                return String.join("/", urlInfo.getBaseRelativeUri(), addressLink);
+            }
+        }
     }
 }
