@@ -35,11 +35,10 @@ public class CommonConfiguration {
             throw new RuntimeException("Failed to load yaml configuration. ");
         }
 
-        Map<String, ForumProperties> forumPropertiesMap;
-        if (CollectionUtils.isEmpty(properties.getForums())) {
-            forumPropertiesMap =Collections.emptyMap();
-        }
-        else {
+        Map<String, ForumProperties> forumPropertiesMap = Collections.emptyMap();
+        Map<String, ForumProperties> forumPropertiesMapByName = Collections.emptyMap();
+        if (!CollectionUtils.isEmpty(properties.getForums())){
+            // forumPropertiesMap
             forumPropertiesMap = new HashMap<>();
             for (ForumProperties forum : properties.getForums()) {
                 if (CollectionUtils.isEmpty(forum.getDomains())) {
@@ -49,11 +48,19 @@ public class CommonConfiguration {
                     forumPropertiesMap.put(domain, forum);
                 }
             }
+            // forumPropertiesMapByName
+            forumPropertiesMapByName = new HashMap<>();
+            for (ForumProperties forum : properties.getForums()) {
+                forumPropertiesMapByName.put(forum.getName(), forum);
+            }
         }
 
         ConfigurationContext context = new ConfigurationContext();
         BeanUtils.copyProperties(properties, context);
         context.setMapForumProperties(forumPropertiesMap);
+        context.setMapForumPropertiesByName(forumPropertiesMapByName);
+
         return context;
     }
+
 }

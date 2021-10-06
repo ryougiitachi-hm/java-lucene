@@ -1,4 +1,6 @@
 html-directory: pages
+category-directory: categories
+post-directory: posts
 index-directory: indices
 buffer-reader-size: 524288
 buffer-writer-size: 524288
@@ -35,8 +37,35 @@ forums:
       Cache-Control: "no-cache"
       Pragma: no-cache
       Upgrade-Insecure-Requests: 1
-  - name: f2
-    index-name: f2
+  - name: siszzo
+    index-name: siszzo
+    charset: UTF-8
+    ### the unit time is ms
+    interval-fixed: 300
+    interval-flexible: 200
     domains:
-      - 10.0.0.1
-      - 10.0.0.2
+      - 23.225.172.95
+    ### forum -> category -> post/thread
+    forum-categories-selector:
+    category-post-list-selector: div#wrapper > div > div.mainbox.threadlist > form > table > tbody[id]
+    category-post-inline-title-selector: tr > th.new > span > a, tr > th.lock > span > a
+    category-post-inline-url-selector: tr > th.new > span > a, tr > th.lock > span > a
+    category-post-inline-cdate-selector: tr > td.author > em
+    category-post-inline-edate-selector: tr > td.lastpost > em > a
+    # simplified version
+    category-next-page-selector: div#wrapper div div.pages_btns div.pages a.next
+    category-params: # no query params
+      - fid
+      - filter
+      - typeid
+      - page
+    post-params: # no query params
+      - tid
+    headers:
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36"
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+      Accept-Encoding: "gzip, deflate"
+      Accept-Language: "en-GB,en-US;q=0.9,en;q=0.8"
+      Cache-Control: "no-cache"
+      Pragma: no-cache
+      Upgrade-Insecure-Requests: 1

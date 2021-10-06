@@ -69,5 +69,27 @@ public class CommonUtils {
         }
     }
 
+    public static String generateHtmlFileName(UrlInfo urlInfo, List<String> params) {
+        if (CollectionUtils.isEmpty(urlInfo.getPaths()) && CollectionUtils.isEmpty(urlInfo.getParams())) {
+            return UUID.randomUUID().toString();
+        }
+        String strLastPath = urlInfo.getPaths().get(urlInfo.getPaths().size() - 1);
+        int idx = strLastPath.indexOf(".");
+        StringBuilder builder = new StringBuilder(100);
+        // path part
+        if (idx > 0) {
+            builder.append(strLastPath.substring(0, idx));
+        }
+        else {
+            builder.append(strLastPath);
+        }
+        // param path
+        for (String param : params) {
+            builder.append("-").append(param).append(urlInfo.getParams().get(param));
+        }
+        builder.append(".html");
+        return builder.toString();
+    }
+
     private CommonUtils() {}
 }

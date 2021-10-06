@@ -121,20 +121,27 @@ public class LuceneIndexManager implements CommonIndexManager {
 
     private void removeExpiredDocuments(IndexWriter writer, List<PostDocument> documents)
             throws IOException {
+        int count = 0;
         for(PostDocument postDocument : documents) {
+            ++count;
+            logger.info("[Index Mgr] Removing document {}. ", count);
 //            writer.deleteDocuments(new Term(PostDocument.FLD_POST_ID,
 //                    String.valueOf(postDocument.getPostId())));
             Query query = NumericDocValuesField
                     .newSlowExactQuery(PostDocument.FLD_POST_ID, postDocument.getPostId());
             writer.deleteDocuments(query);
+            logger.info("[Index Mgr] Finished removing document {}. ", count);
         }
         writer.commit();
     }
 
     private void addUpdatedDocuments(IndexWriter writer, List<PostDocument> documents)
             throws IOException {
+        int count = 0;
         for (PostDocument postDocument : documents) {
             try(BufferedReader br = Files.newBufferedReader(Paths.get(postDocument.getFilePath()))) {
+                ++count;
+                logger.info("[Index Mgr] Adding document {}. ", count);
                 StringBuilder builder = new StringBuilder(1 << 15);
                 String line = null;
                 while ((line = br.readLine()) != null) {
@@ -152,6 +159,7 @@ public class LuceneIndexManager implements CommonIndexManager {
                 document.add(new TextField(PostDocument.FLD_CONTENT,
                         builder.toString(), Field.Store.YES));
                 writer.addDocument(document);
+                logger.info("[Index Mgr] Finished adding document {}. ", count);
             }
             catch (IOException e) {
                 logger.error("Failed to write post {}.", postDocument.getPostId(), e);

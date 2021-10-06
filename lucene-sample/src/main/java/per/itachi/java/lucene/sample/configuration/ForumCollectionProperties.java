@@ -15,6 +15,12 @@ public class ForumCollectionProperties {
     @JsonProperty("html-directory")
     private String htmlDirectory;
 
+    @JsonProperty("category-directory")
+    private String categoryDirectory;
+
+    @JsonProperty("post-directory")
+    private String postDirectory;
+
     @JsonProperty("index-directory")
     private String indexDirectory;
 

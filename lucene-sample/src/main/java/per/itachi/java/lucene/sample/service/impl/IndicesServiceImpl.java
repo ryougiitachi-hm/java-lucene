@@ -1,10 +1,6 @@
 package per.itachi.java.lucene.sample.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -15,22 +11,25 @@ import per.itachi.java.lucene.sample.entity.html.CategoryInfo;
 import per.itachi.java.lucene.sample.entity.html.PostInfo;
 import per.itachi.java.lucene.sample.entity.html.UrlInfo;
 import per.itachi.java.lucene.sample.entity.lucene.PostDocument;
-import per.itachi.java.lucene.sample.parser.ForumCategoryParser;
 import per.itachi.java.lucene.sample.parser.ForumParser;
 import per.itachi.java.lucene.sample.parser.HtmlDownloader;
 import per.itachi.java.lucene.sample.persist.CommonIndexManager;
 import per.itachi.java.lucene.sample.service.IndicesService;
 import per.itachi.java.lucene.sample.util.CommonUtils;
-import per.itachi.java.lucene.sample.util.Constants;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
+/**
+ * The structure of html folder: [html]/[index-name]/category.
+ * */
 @Slf4j
 @Service
 public class IndicesServiceImpl implements IndicesService {
@@ -90,8 +89,8 @@ public class IndicesServiceImpl implements IndicesService {
             }
 
             ++countCategories;
-            Path outputPath = Paths.get(context.getHtmlDirectory(), properties.getName(),
-                    generateHtmlFileName(nextPageUrlInfo, properties.getCategoryParams()));
+            Path outputPath = Paths.get(context.getHtmlDirectory(), properties.getName(), context.getCategoryDirectory(),
+                    CommonUtils.generateHtmlFileName(nextPageUrlInfo, properties.getCategoryParams()));
             downloader.download(nextPageUrl, outputPath, properties);
             CategoryInfo categoryInfo = parser.parseCategory(outputPath, urlInfo, properties);
             if (Objects.isNull(categoryInfo)) {
@@ -104,6 +103,61 @@ public class IndicesServiceImpl implements IndicesService {
         }
         log.info("Finished downloading and parsing forum [{}] {} categories. ", properties.getName(), countCategories);
 
+        List<PostDocument> postDocumentList = processPostsFrom(categoryInfoList, properties);
+        log.info("Finished parsing url {}. ", url);
+        
+        log.info("Start writing indices. ");
+        indexManager.writeIndices(properties.getName(), postDocumentList);
+        log.info("Finished writing indices. ");
+    }
+
+    @Override
+    public void updateIndicesFromCategoryFolder(String indexName) {
+        ForumProperties properties = context.getForumPropertiesByName(indexName);
+        if (properties == null) {
+            log.error("The index name {} is not configured. ", indexName);
+            return;
+        }
+
+        Path categoryHtmlPath = Paths.get(context.getHtmlDirectory(), properties.getName(), context.getCategoryDirectory());
+        log.info("Checking existence of html category directory {}. ", categoryHtmlPath);
+        if (!Files.exists(categoryHtmlPath)) {
+            log.error("The html category directory {} doesn't exist! ", categoryHtmlPath);
+            return;
+        }
+
+        String strExampleCategoryUrl = String.format("http://%s/forum/a", properties.getDomains().get(0));
+        UrlInfo urlInfo = CommonUtils.generateUrlInfo(strExampleCategoryUrl);
+        if (!StringUtils.hasText(urlInfo.getHost())) {
+            log.error("The url {} is not valid address. ", strExampleCategoryUrl);
+            return;
+        }
+
+        log.info("Start processing forum [{}] categories. ", properties.getName());
+        List<CategoryInfo> categoryInfoList = new LinkedList<>();
+        int countCategories = 0;
+        try(DirectoryStream<Path> iteratorCategoriesHtml = Files
+                .newDirectoryStream(categoryHtmlPath, entry -> entry.toString().endsWith(".html"))) {
+            for (Path categoriesHtmlPath : iteratorCategoriesHtml) {
+                CategoryInfo categoryInfo = parser.parseCategory(categoriesHtmlPath, urlInfo, properties);
+                categoryInfoList.add(categoryInfo);
+                ++countCategories;
+            }
+        }
+        catch (IOException e) {
+            log.error("Error occurred when traversing {}. ", categoryHtmlPath, e);
+        }
+        log.info("Finished processing forum [{}] {} categories. ", properties.getName(), countCategories);
+
+        List<PostDocument> postDocumentList = processPostsFrom(categoryInfoList, properties);
+        log.info("Finished parsing url {}. ", urlInfo);
+
+        log.info("Start writing indices. ");
+        indexManager.writeIndices(properties.getName(), postDocumentList);
+        log.info("Finished writing indices. ");
+    }
+
+    private List<PostDocument> processPostsFrom(List<CategoryInfo> categoryInfoList, ForumProperties properties) {
         log.info("Start downloading forum [{}] posts from categories. ", properties.getName());
         // download and wrap post list.
         // not so good, to decouple PostInfo and PostDocument.
@@ -119,45 +173,60 @@ public class IndicesServiceImpl implements IndicesService {
                 log.info("[Service] Start processing category {} post {} total {}. ",
                         countPages, countPostsPerCategory, countPosts);
                 UrlInfo postUrlInfo = CommonUtils.generateUrlInfo(postInfo.getAddressLink());
-                Path outputPath = Paths.get(context.getHtmlDirectory(), properties.getName(),
-                        generateHtmlFileName(postUrlInfo, properties.getPostParams()));
+                Path outputPath = Paths.get(context.getHtmlDirectory(), properties.getName(), context.getPostDirectory(),
+                        CommonUtils.generateHtmlFileName(postUrlInfo, properties.getPostParams()));
                 downloader.download(postInfo.getAddressLink(), outputPath, properties);
                 PostDocument postDocument = new PostDocument();
                 postDocument.setPostId(generatePostId(postUrlInfo));
                 postDocument.setFilePath(outputPath.toString());
+                postDocument.setFileName(outputPath.getFileName().toString());
                 postDocument.setTitle(postInfo.getTitle());
                 postDocumentList.add(postDocument);
             }
         }
         log.info("Finished downloading forum [{}] {} posts. ", properties.getName(), countPosts);
+        return postDocumentList;
+    }
 
-        log.info("Finished parsing url {}. ", url);
-        
+    @Override
+    public void updateIndicesFromPostFolder(String indexName) {
+        ForumProperties properties = context.getForumPropertiesByName(indexName);
+        if (properties == null) {
+            log.error("The index name {} is not configured. ", indexName);
+            return;
+        }
+
+        Path postHtmlPath = Paths.get(context.getHtmlDirectory(), properties.getName(), context.getPostDirectory());
+        log.info("Checking existence of html post directory {}. ", postHtmlPath);
+        if (!Files.exists(postHtmlPath)) {
+            log.error("The html post directory {} doesn't exist! ", postHtmlPath);
+            return;
+        }
+
+        log.info("Start processing forum [{}] posts. ", properties.getName());
+        List<PostDocument> postDocumentList = new LinkedList<>();
+        int countPosts = 0;
+        try(DirectoryStream<Path> iteratorPostsHtml = Files
+                .newDirectoryStream(postHtmlPath, entry -> entry.toString().endsWith(".html"))) {
+            for (Path postFilePath : iteratorPostsHtml) {
+                PostDocument postDocument = new PostDocument();
+                postDocument.setPostId(generatePostId(postFilePath.getFileName().toString(), properties.getPostParams()));
+                postDocument.setFilePath(postFilePath.toString());
+                postDocument.setFileName(postFilePath.getFileName().toString());
+                postDocument.setTitle(postFilePath.getFileName().toString());
+                postDocumentList.add(postDocument);
+                ++countPosts;
+                log.info("Processing post file {} {}. ", postFilePath, countPosts);
+            }
+        }
+        catch (IOException e) {
+            log.error("Error occurred when traversing {}. ", postHtmlPath, e);
+        }
+        log.info("Finished processing forum [{}] {} posts. ", properties.getName(), countPosts);
+
         log.info("Start writing indices. ");
         indexManager.writeIndices(properties.getName(), postDocumentList);
         log.info("Finished writing indices. ");
-    }
-    
-    private String generateHtmlFileName(UrlInfo urlInfo, List<String> params) {
-        if (CollectionUtils.isEmpty(urlInfo.getPaths()) && CollectionUtils.isEmpty(urlInfo.getParams())) {
-            return UUID.randomUUID().toString();
-        }
-        String strLastPath = urlInfo.getPaths().get(urlInfo.getPaths().size() - 1);
-        int idx = strLastPath.indexOf(".");
-        StringBuilder builder = new StringBuilder(100);
-        // path part
-        if (idx > 0) {
-            builder.append(strLastPath.substring(0, idx));
-        }
-        else {
-            builder.append(strLastPath);
-        }
-        // param path
-        for (String param : params) {
-            builder.append("-").append(param).append(urlInfo.getParams().get(param));
-        }
-        builder.append(".html");
-        return builder.toString();
     }
 
     private long generatePostId(UrlInfo urlInfo) {
@@ -176,6 +245,16 @@ public class IndicesServiceImpl implements IndicesService {
         else {
             return Long.parseLong(params.get("tid"));
         }
+    }
+
+    private long generatePostId(String fileName, List<String> params) {
+        if (CollectionUtils.isEmpty(params)) {
+            return 0;
+        }
+        int idxTag = fileName.indexOf(params.get(0));
+        int idxSplitter = fileName.indexOf(".", idxTag);
+        String strPostId = fileName.substring(idxTag + params.get(0).length(), idxSplitter);
+        return Long.valueOf(strPostId);
     }
 
 }
