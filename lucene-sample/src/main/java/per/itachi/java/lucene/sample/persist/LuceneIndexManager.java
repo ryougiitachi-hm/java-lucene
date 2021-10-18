@@ -1,23 +1,5 @@
 package per.itachi.java.lucene.sample.persist;
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.NumericDocValuesField;
-import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.*;
-import org.apache.lucene.search.*;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
-import per.itachi.java.lucene.sample.configuration.ConfigurationContext;
-import per.itachi.java.lucene.sample.entity.lucene.PostDocument;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,6 +7,32 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.NumericDocValuesField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.ConcurrentMergeScheduler;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import per.itachi.java.lucene.sample.configuration.ConfigurationContext;
+import per.itachi.java.lucene.sample.entity.lucene.PostDocument;
 
 @Repository
 public class LuceneIndexManager implements CommonIndexManager {
@@ -148,6 +156,8 @@ public class LuceneIndexManager implements CommonIndexManager {
                     builder.append(line);
                 }
                 Document document = new Document();
+                document.add(new NumericDocValuesField(PostDocument.FLD_CATEGORY_ID,
+                        postDocument.getCategoryId()));
 //                document.add(new StringField(PostDocument.FLD_POST_ID,
 //                        String.valueOf(postDocument.getPostId()), Field.Store.YES));
                 document.add(new NumericDocValuesField(PostDocument.FLD_POST_ID,

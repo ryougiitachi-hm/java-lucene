@@ -11,6 +11,8 @@ import java.util.List;
 public class CategoryInfo {
 
     private String fileName;
+    
+    private String fid;
 
     private List<PostInfo> postInfos = Collections.emptyList();
 

@@ -11,6 +11,8 @@ import java.time.OffsetDateTime;
 @Setter
 @ToString
 public class PostDocument {
+	
+	public static final String FLD_CATEGORY_ID = "category_id";
 
     public static final String FLD_POST_ID = "post_id";
 
@@ -24,6 +26,9 @@ public class PostDocument {
 
     public static final String FLD_CONTENT = "content";
 
+    
+    private Long categoryId;
+    
     /**
      * the identifier of the current post document, sometimes threadId etc.
      * */
@@ -39,3 +44,4 @@ public class PostDocument {
 
     private OffsetDateTime edate;
 }
+

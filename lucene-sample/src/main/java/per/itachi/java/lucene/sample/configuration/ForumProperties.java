@@ -51,6 +51,9 @@ public class ForumProperties {
 
     @JsonProperty("category-next-page-selector")
     private String categoryNextPageSelector;
+    
+    @JsonProperty("post-title-selector")
+    private String postTitleSelector;
 
     /**
      * used to generate file name for category html

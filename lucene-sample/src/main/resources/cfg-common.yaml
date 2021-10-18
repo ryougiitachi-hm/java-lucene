@@ -1,6 +1,10 @@
+# can be an absolute path
 html-directory: pages
+# must be an relative path
 category-directory: categories
+# must be an relative path
 post-directory: posts
+# can be an absolute path
 index-directory: indices
 buffer-reader-size: 524288
 buffer-writer-size: 524288
@@ -54,6 +58,8 @@ forums:
     category-post-inline-edate-selector: tr > td.lastpost > em > a
     # simplified version
     category-next-page-selector: div#wrapper div div.pages_btns div.pages a.next
+    post-title-selector: div#wrapper > div:nth-child(1) > form > div.mainbox.viewthread > h1
+    #post-cdate-selector: 
     category-params: # no query params
       - fid
       - filter

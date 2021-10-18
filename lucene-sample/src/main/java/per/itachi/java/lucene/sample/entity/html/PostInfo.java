@@ -9,6 +9,8 @@ import lombok.ToString;
 @ToString
 public class PostInfo {
 
+	private long categoryId;
+	
     private String title;
 
     private String addressLink;

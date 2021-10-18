@@ -7,6 +7,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+
 import per.itachi.java.lucene.sample.configuration.ConfigurationContext;
 import per.itachi.java.lucene.sample.configuration.ForumProperties;
 import per.itachi.java.lucene.sample.entity.html.CategoryInfo;
@@ -35,7 +37,15 @@ public class JsoupForumParser implements ForumParser {
     @Override
     public CategoryInfo parseCategory(Path htmlPath, UrlInfo urlInfo, ForumProperties properties) {
 
-        log.info("[Parser] Parsing html {}. ", htmlPath);
+        log.info("[Parser] Parsing html category {}. ", htmlPath);
+
+        // fid
+        String strFid = "";
+        if (!CollectionUtils.isEmpty(urlInfo.getParams()) 
+        		&& !CollectionUtils.isEmpty(properties.getCategoryParams())) {
+        	strFid = urlInfo.getParams().get(properties.getCategoryParams().get(0));
+		}
+        
         try(InputStream bis = new BufferedInputStream(Files.newInputStream(htmlPath),
                 context.getBufferReaderSize())) {
             String nextPageUrl;
@@ -43,14 +53,15 @@ public class JsoupForumParser implements ForumParser {
 
             Document document = Jsoup.parse(bis, properties.getCharset(), urlInfo.getBaseRelativeUri());
             Elements elementsPostList = document.select(properties.getCategoryPostListSelector());
-            int countCategoryLine = 0;// count of current category lines
+//            int countCategoryLine = 0;// count of current category lines
             for (Element post : elementsPostList) {
-                ++countCategoryLine;
+//                ++countCategoryLine;
                 Element elementTitle = post.selectFirst(properties.getCategoryPostInlineTitleSelector());
                 Element elementAddressUrl = post.selectFirst(properties.getCategoryPostInlineUrlSelector());
                 Element elementCdate = post.selectFirst(properties.getCategoryPostInlineCdateSelector());
                 Element elementEdate = post.selectFirst(properties.getCategoryPostInlineEdateSelector());
                 PostInfo postInfo = new PostInfo();
+                postInfo.setCategoryId(Long.parseLong(strFid));
                 postInfo.setTitle(Objects.nonNull(elementTitle) ? elementTitle.text() : "");
                 postInfo.setAddressLink(Objects.nonNull(elementAddressUrl)
                         ? completeUrl(elementAddressUrl.attr(Constants.HTML_ATTR_A_HREF), urlInfo) : "");
@@ -66,9 +77,11 @@ public class JsoupForumParser implements ForumParser {
             else {
                 nextPageUrl = completeUrl(elementNextPage.attr(Constants.HTML_ATTR_A_HREF), urlInfo);
             }
-            log.info("[Parser] Parsed html {}. ", htmlPath);
-
+            log.info("[Parser] Parsed html category {}. ", htmlPath);
+            
+            // CategoryInfo
             CategoryInfo categoryInfo = new CategoryInfo();
+            categoryInfo.setFid(strFid);
             categoryInfo.setPostInfos(postInfoList);
             categoryInfo.setNextPageUrl(nextPageUrl);
             return categoryInfo;
@@ -80,7 +93,24 @@ public class JsoupForumParser implements ForumParser {
     }
 
     @Override
-    public void parsePost(Path htmlPath) {
+    public PostInfo parsePost(Path htmlPath, ForumProperties properties) {
+        log.info("[Parser] Parsing html post {}. ", htmlPath);
+        try(InputStream bis = new BufferedInputStream(Files.newInputStream(htmlPath),
+                context.getBufferReaderSize())) {
+
+            Document document = Jsoup.parse(bis, properties.getCharset(), ""); // TODO: relative links URL.
+            Element elementTitle = document.selectFirst(properties.getPostTitleSelector());
+            String strTitle = Objects.nonNull(elementTitle) ? elementTitle.text() : "";
+            log.info("[Parser] Parsed html category {}. ", htmlPath);
+            
+            PostInfo postInfo = new PostInfo();
+            postInfo.setTitle(strTitle);
+            return postInfo;
+		} 
+        catch (IOException e) {
+            log.error("[Parser] Failed to open and parse post html file {}. ", htmlPath, e);
+            return null;
+		}
     }
 
     private String completeUrl(String addressLink, UrlInfo urlInfo) {

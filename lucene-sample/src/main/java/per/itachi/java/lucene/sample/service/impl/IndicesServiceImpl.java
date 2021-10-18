@@ -78,8 +78,9 @@ public class IndicesServiceImpl implements IndicesService {
             }
         }
 
+        // step category, but no category output. ^_^|| 
         log.info("Start downloading and parsing forum [{}] categories. ", properties.getName());
-        List<CategoryInfo> categoryInfoList = new LinkedList<>();
+        List<PostInfo> postInfoList = new LinkedList<>();
         int countCategories = 0;
         String nextPageUrl = url;
         while (StringUtils.hasText(nextPageUrl)) {
@@ -97,13 +98,14 @@ public class IndicesServiceImpl implements IndicesService {
                 nextPageUrl = null;
             }
             else {
-                categoryInfoList.add(categoryInfo);
+            	postInfoList.addAll(categoryInfo.getPostInfos());
                 nextPageUrl = categoryInfo.getNextPageUrl();
             }
         }
         log.info("Finished downloading and parsing forum [{}] {} categories. ", properties.getName(), countCategories);
 
-        List<PostDocument> postDocumentList = processPostsFrom(categoryInfoList, properties);
+        // step post. 
+        List<PostDocument> postDocumentList = processPostsFrom(postInfoList, properties);
         log.info("Finished parsing url {}. ", url);
         
         log.info("Start writing indices. ");
@@ -134,13 +136,17 @@ public class IndicesServiceImpl implements IndicesService {
         }
 
         log.info("Start processing forum [{}] categories. ", properties.getName());
-        List<CategoryInfo> categoryInfoList = new LinkedList<>();
+        List<PostInfo> postInfoList = new LinkedList<>();
         int countCategories = 0;
         try(DirectoryStream<Path> iteratorCategoriesHtml = Files
                 .newDirectoryStream(categoryHtmlPath, entry -> entry.toString().endsWith(".html"))) {
             for (Path categoriesHtmlPath : iteratorCategoriesHtml) {
                 CategoryInfo categoryInfo = parser.parseCategory(categoriesHtmlPath, urlInfo, properties);
-                categoryInfoList.add(categoryInfo);
+                for (PostInfo postInfoItem : categoryInfo.getPostInfos()) {
+                	postInfoItem.setCategoryId(generatePageId(categoriesHtmlPath.getFileName().toString(), 
+                			properties.getCategoryParams()));
+                    postInfoList.add(postInfoItem);
+				}
                 ++countCategories;
             }
         }
@@ -149,7 +155,7 @@ public class IndicesServiceImpl implements IndicesService {
         }
         log.info("Finished processing forum [{}] {} categories. ", properties.getName(), countCategories);
 
-        List<PostDocument> postDocumentList = processPostsFrom(categoryInfoList, properties);
+        List<PostDocument> postDocumentList = processPostsFrom(postInfoList, properties);
         log.info("Finished parsing url {}. ", urlInfo);
 
         log.info("Start writing indices. ");
@@ -157,32 +163,27 @@ public class IndicesServiceImpl implements IndicesService {
         log.info("Finished writing indices. ");
     }
 
-    private List<PostDocument> processPostsFrom(List<CategoryInfo> categoryInfoList, ForumProperties properties) {
+    private List<PostDocument> processPostsFrom(List<PostInfo> postInfoList, ForumProperties properties) {
         log.info("Start downloading forum [{}] posts from categories. ", properties.getName());
         // download and wrap post list.
         // not so good, to decouple PostInfo and PostDocument.
-        int countPages = 0;
         int countPosts = 0;
         List<PostDocument> postDocumentList = new LinkedList<>();
-        for (CategoryInfo categoryInfo : categoryInfoList) {
-            ++ countPages;
-            int countPostsPerCategory = 0;
-            for (PostInfo postInfo : categoryInfo.getPostInfos()) {
-                ++ countPosts;
-                ++ countPostsPerCategory;
-                log.info("[Service] Start processing category {} post {} total {}. ",
-                        countPages, countPostsPerCategory, countPosts);
-                UrlInfo postUrlInfo = CommonUtils.generateUrlInfo(postInfo.getAddressLink());
-                Path outputPath = Paths.get(context.getHtmlDirectory(), properties.getName(), context.getPostDirectory(),
-                        CommonUtils.generateHtmlFileName(postUrlInfo, properties.getPostParams()));
-                downloader.download(postInfo.getAddressLink(), outputPath, properties);
-                PostDocument postDocument = new PostDocument();
-                postDocument.setPostId(generatePostId(postUrlInfo));
-                postDocument.setFilePath(outputPath.toString());
-                postDocument.setFileName(outputPath.getFileName().toString());
-                postDocument.setTitle(postInfo.getTitle());
-                postDocumentList.add(postDocument);
-            }
+        for (PostInfo postInfo : postInfoList) {
+            ++ countPosts;
+            log.info("[Service] Start processing category[id={}], the total of posts is {}. ",
+            		postInfo.getCategoryId(), countPosts);
+            UrlInfo postUrlInfo = CommonUtils.generateUrlInfo(postInfo.getAddressLink());
+            Path outputPath = Paths.get(context.getHtmlDirectory(), properties.getName(), context.getPostDirectory(),
+                    CommonUtils.generateHtmlFileName(postUrlInfo, properties.getPostParams()));
+            downloader.download(postInfo.getAddressLink(), outputPath, properties);
+            PostDocument postDocument = new PostDocument();
+            postDocument.setCategoryId(postInfo.getCategoryId());
+            postDocument.setPostId(generatePostId(postUrlInfo));
+            postDocument.setFilePath(outputPath.toString());
+            postDocument.setFileName(outputPath.getFileName().toString());
+            postDocument.setTitle(postInfo.getTitle());
+            postDocumentList.add(postDocument);
         }
         log.info("Finished downloading forum [{}] {} posts. ", properties.getName(), countPosts);
         return postDocumentList;
@@ -210,7 +211,8 @@ public class IndicesServiceImpl implements IndicesService {
                 .newDirectoryStream(postHtmlPath, entry -> entry.toString().endsWith(".html"))) {
             for (Path postFilePath : iteratorPostsHtml) {
                 PostDocument postDocument = new PostDocument();
-                postDocument.setPostId(generatePostId(postFilePath.getFileName().toString(), properties.getPostParams()));
+                postDocument.setCategoryId(0L);
+                postDocument.setPostId(generatePageId(postFilePath.getFileName().toString(), properties.getPostParams()));
                 postDocument.setFilePath(postFilePath.toString());
                 postDocument.setFileName(postFilePath.getFileName().toString());
                 postDocument.setTitle(postFilePath.getFileName().toString());
@@ -247,13 +249,23 @@ public class IndicesServiceImpl implements IndicesService {
         }
     }
 
-    private long generatePostId(String fileName, List<String> params) {
+    private long generatePageId(String fileName, List<String> params) {
         if (CollectionUtils.isEmpty(params)) {
             return 0;
         }
         int idxTag = fileName.indexOf(params.get(0));
-        int idxSplitter = fileName.indexOf(".", idxTag);
-        String strPostId = fileName.substring(idxTag + params.get(0).length(), idxSplitter);
+        int idxHythen = fileName.indexOf("-", idxTag);
+        int idxSuffix = fileName.indexOf(".", idxTag);
+        String strPostId;
+        if (idxHythen >= 0) {
+        	strPostId = fileName.substring(idxTag + params.get(0).length(), idxHythen);
+		}
+        else if (idxSuffix >= 0) {
+        	strPostId = fileName.substring(idxTag + params.get(0).length(), idxSuffix);
+		}
+        else {
+			strPostId = "";
+		}
         return Long.valueOf(strPostId);
     }
 
