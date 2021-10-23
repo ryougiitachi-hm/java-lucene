@@ -20,6 +20,8 @@ public class ConfigurationContext {
 
     private String indexDirectory;
 
+    private String dataDirectory;
+
     private int bufferReaderSize;
 
     private int bufferWriterSize;

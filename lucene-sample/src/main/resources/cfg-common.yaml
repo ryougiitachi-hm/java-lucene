@@ -6,6 +6,8 @@ category-directory: categories
 post-directory: posts
 # can be an absolute path
 index-directory: indices
+# can be an absolute path, for storing breakpoint data etc.
+data-directory: data
 buffer-reader-size: 524288
 buffer-writer-size: 524288
 forums:

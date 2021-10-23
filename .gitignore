@@ -23,5 +23,6 @@ logs/
 
 #other
 pages/
-index
-indices
+index/
+indices/
+data/

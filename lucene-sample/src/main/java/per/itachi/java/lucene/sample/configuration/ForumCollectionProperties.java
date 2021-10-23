@@ -24,6 +24,9 @@ public class ForumCollectionProperties {
     @JsonProperty("index-directory")
     private String indexDirectory;
 
+    @JsonProperty("data-directory")
+    private String dataDirectory;
+
     @JsonProperty("buffer-reader-size")
     private int bufferReaderSize;
 

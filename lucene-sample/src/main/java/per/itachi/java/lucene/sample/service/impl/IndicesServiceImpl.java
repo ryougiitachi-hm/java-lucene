@@ -7,10 +7,12 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import per.itachi.java.lucene.sample.configuration.ConfigurationContext;
 import per.itachi.java.lucene.sample.configuration.ForumProperties;
+import per.itachi.java.lucene.sample.entity.PostBreakpointRecord;
 import per.itachi.java.lucene.sample.entity.html.CategoryInfo;
 import per.itachi.java.lucene.sample.entity.html.PostInfo;
 import per.itachi.java.lucene.sample.entity.html.UrlInfo;
 import per.itachi.java.lucene.sample.entity.lucene.PostDocument;
+import per.itachi.java.lucene.sample.parser.BreakpointRecorder;
 import per.itachi.java.lucene.sample.parser.ForumParser;
 import per.itachi.java.lucene.sample.parser.HtmlDownloader;
 import per.itachi.java.lucene.sample.persist.CommonIndexManager;
@@ -18,6 +20,7 @@ import per.itachi.java.lucene.sample.service.IndicesService;
 import per.itachi.java.lucene.sample.util.CommonUtils;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * The structure of html folder: [html]/[index-name]/category.
@@ -45,6 +49,9 @@ public class IndicesServiceImpl implements IndicesService {
 
     @Autowired
     private CommonIndexManager indexManager;
+
+    @Autowired
+    private BreakpointRecorder breakpointRecorder;
 
     @Override
     public void updateIndices(String url) {
@@ -165,25 +172,35 @@ public class IndicesServiceImpl implements IndicesService {
 
     private List<PostDocument> processPostsFrom(List<PostInfo> postInfoList, ForumProperties properties) {
         log.info("Start downloading forum [{}] posts from categories. ", properties.getName());
+        // read breakpoint records.
+         Set<PostBreakpointRecord> breakpointRecords = breakpointRecorder.readAll(properties.getName());
         // download and wrap post list.
         // not so good, to decouple PostInfo and PostDocument.
         int countPosts = 0;
         List<PostDocument> postDocumentList = new LinkedList<>();
         for (PostInfo postInfo : postInfoList) {
+            UrlInfo postUrlInfo = CommonUtils.generateUrlInfo(postInfo.getAddressLink());
+            long postId = generatePostId(postUrlInfo);
+            if (breakpointRecords.contains(PostBreakpointRecord.builder()
+                    .postId(postId).build())) {
+                continue;
+            }
             ++ countPosts;
             log.info("[Service] Start processing category[id={}], the total of posts is {}. ",
             		postInfo.getCategoryId(), countPosts);
-            UrlInfo postUrlInfo = CommonUtils.generateUrlInfo(postInfo.getAddressLink());
             Path outputPath = Paths.get(context.getHtmlDirectory(), properties.getName(), context.getPostDirectory(),
                     CommonUtils.generateHtmlFileName(postUrlInfo, properties.getPostParams()));
             downloader.download(postInfo.getAddressLink(), outputPath, properties);
             PostDocument postDocument = new PostDocument();
             postDocument.setCategoryId(postInfo.getCategoryId());
-            postDocument.setPostId(generatePostId(postUrlInfo));
+            postDocument.setPostId(postId);
             postDocument.setFilePath(outputPath.toString());
             postDocument.setFileName(outputPath.getFileName().toString());
             postDocument.setTitle(postInfo.getTitle());
             postDocumentList.add(postDocument);
+            // read breakpoint record.
+            breakpointRecorder.write(properties.getName(),
+                    PostBreakpointRecord.builder().postId(postId).build());
         }
         log.info("Finished downloading forum [{}] {} posts. ", properties.getName(), countPosts);
         return postDocumentList;
