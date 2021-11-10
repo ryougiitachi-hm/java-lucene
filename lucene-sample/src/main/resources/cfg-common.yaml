@@ -47,8 +47,8 @@ forums:
     index-name: siszzo
     charset: UTF-8
     ### the unit time is ms
-    interval-fixed: 300
-    interval-flexible: 200
+    interval-fixed: 200
+    interval-flexible: 300
     domains:
       - 23.225.172.95
     ### forum -> category -> post/thread

@@ -40,7 +40,7 @@ public class JsoupForumParser implements ForumParser {
         log.info("[Parser] Parsing html category {}. ", htmlPath);
 
         // fid
-        String strFid = "";
+        String strFid = "0"; // TODO: the default value of category
         if (!CollectionUtils.isEmpty(urlInfo.getParams()) 
         		&& !CollectionUtils.isEmpty(properties.getCategoryParams())) {
         	strFid = urlInfo.getParams().get(properties.getCategoryParams().get(0));
