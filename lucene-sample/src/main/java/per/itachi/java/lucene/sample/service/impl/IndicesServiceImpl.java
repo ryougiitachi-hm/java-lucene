@@ -71,12 +71,20 @@ public class IndicesServiceImpl implements IndicesService {
 
         // check existence of html directory
         Path pathHtml = Paths.get(context.getHtmlDirectory(), properties.getName());
+        Path pathHtmlCategory = Paths.get(pathHtml.toString(), context.getCategoryDirectory());
+        Path pathHtmlPost = Paths.get(pathHtml.toString(), context.getPostDirectory());
         log.info("Checking existence of html directory {}. ", pathHtml);
-        if (!Files.exists(pathHtml)) {
+        if (!Files.exists(pathHtml)
+                || !Files.exists(pathHtmlCategory)
+                || !Files.exists(pathHtmlPost)) {
             try {
                 log.info("The html {} doesn't exist, creating...", pathHtml);
                 Files.createDirectories(pathHtml);
                 log.info("Created {}.", pathHtml);
+                Files.createDirectories(pathHtmlCategory);
+                log.info("Created {}.", pathHtmlCategory);
+                Files.createDirectories(pathHtmlPost);
+                log.info("Created {}.", pathHtmlPost);
             }
             catch (IOException e) {
                 log.error("Failed to create dir {} when checking existence of html directory. ",
@@ -179,13 +187,14 @@ public class IndicesServiceImpl implements IndicesService {
         int countPosts = 0;
         List<PostDocument> postDocumentList = new LinkedList<>();
         for (PostInfo postInfo : postInfoList) {
+            ++ countPosts;
             UrlInfo postUrlInfo = CommonUtils.generateUrlInfo(postInfo.getAddressLink());
             long postId = generatePostId(postUrlInfo);
             if (breakpointRecords.contains(PostBreakpointRecord.builder()
                     .postId(postId).build())) {
+                log.info("The post with id={} has been downloaded, skiped. ", postId);
                 continue;
             }
-            ++ countPosts;
             log.info("[Service] Start processing category[id={}], the total of posts is {}. ",
             		postInfo.getCategoryId(), countPosts);
             Path outputPath = Paths.get(context.getHtmlDirectory(), properties.getName(), context.getPostDirectory(),
@@ -199,8 +208,10 @@ public class IndicesServiceImpl implements IndicesService {
             postDocument.setTitle(postInfo.getTitle());
             postDocumentList.add(postDocument);
             // read breakpoint record.
-            breakpointRecorder.write(properties.getName(),
-                    PostBreakpointRecord.builder().postId(postId).build());
+            if(Files.exists(outputPath)) {// patch
+                breakpointRecorder.write(properties.getName(),
+                        PostBreakpointRecord.builder().postId(postId).build());
+            }
         }
         log.info("Finished downloading forum [{}] {} posts. ", properties.getName(), countPosts);
         return postDocumentList;
@@ -283,7 +294,7 @@ public class IndicesServiceImpl implements IndicesService {
         else {
 			strPostId = "";
 		}
-        return Long.valueOf(strPostId);
+        return Long.parseLong(strPostId);
     }
 
 }

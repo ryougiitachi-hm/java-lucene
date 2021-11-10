@@ -130,7 +130,6 @@ public class FileBreakpointRecorder implements BreakpointRecorder{
             result = new HashSet<>();
             boolean running = true;
             while (running) {// until throws EOF.
-                log.debug("dis.available() is {}. ", dis.available());
                 result.add(PostBreakpointRecord.builder()
                         .postId(dis.readLong())
                         .build());
