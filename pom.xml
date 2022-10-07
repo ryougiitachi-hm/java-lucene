@@ -10,6 +10,7 @@
     <modules>
         <module>lucene-demo</module>
         <module>lucene-sample</module>
+        <module>lucene-practice</module>
     </modules>
     <name>java-lucene</name>
 
@@ -26,6 +27,7 @@
         <mockito.version>3.12.1</mockito.version>
         <jackson.fasterxml.version>2.12.3</jackson.fasterxml.version>
         <jsoup.version>1.14.2</jsoup.version>
+        <mmseg4j.version>1.8.6</mmseg4j.version>
     </properties>
 
     <dependencyManagement>
@@ -106,6 +108,16 @@
                 <groupId>org.jsoup</groupId>
                 <artifactId>jsoup</artifactId>
                 <version>${jsoup.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.chenlb.mmseg4j</groupId>
+                <artifactId>mmseg4j-all</artifactId>
+                <version>${mmseg4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.chenlb.mmseg4j</groupId>
+                <artifactId>mmseg4j-all-with-dic</artifactId>
+                <version>${mmseg4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
