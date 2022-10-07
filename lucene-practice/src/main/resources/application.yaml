@@ -1,0 +1,6 @@
+infra:
+  lucene:
+    analyzer-initializer:
+      smart-cn:
+        index-table-size: 13000
+        word-item-size: 9000
