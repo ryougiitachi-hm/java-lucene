@@ -13,7 +13,7 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.springframework.stereotype.Service;
 import per.itachi.java.lucene.practice.app.service.TokenStreamService;
-import per.itachi.java.lucene.practice.infra.file.LineReader;
+import per.itachi.java.lucene.practice.infra.file.text.LineReader;
 import per.itachi.java.lucene.practice.infra.lucene.AnalyzerInitializer;
 
 @Slf4j

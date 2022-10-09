@@ -1,6 +1,25 @@
 infra:
   lucene:
+    # index path = <base-path>/<index-name(website-name)>
+    base-path: indices
     analyzer-initializer:
       smart-cn:
-        index-table-size: 13000
-        word-item-size: 9000
+#        index-table-size: 13000 # not necessary
+#        word-item-size: 9000 # not necessary
+
+  restful:
+    downloader:
+      default-buffer-size: 8196
+      sites:
+        siszzo:
+          website-name: siszzo
+          domains:
+          - 23.225.172.95
+          headers:
+            User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36"
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+            Accept-Encoding: "gzip, deflate"
+            Accept-Language: "en-GB,en-US;q=0.9,en;q=0.8"
+            Cache-Control: "no-cache"
+            Pragma: no-cache
+            Upgrade-Insecure-Requests: 1

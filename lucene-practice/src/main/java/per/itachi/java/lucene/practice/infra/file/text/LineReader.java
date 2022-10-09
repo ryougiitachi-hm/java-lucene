@@ -1,4 +1,4 @@
-package per.itachi.java.lucene.practice.infra.file;
+package per.itachi.java.lucene.practice.infra.file.text;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
