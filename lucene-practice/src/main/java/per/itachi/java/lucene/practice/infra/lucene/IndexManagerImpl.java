@@ -4,14 +4,17 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.DocValues;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.NumericDocValues;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
@@ -34,7 +37,7 @@ public class IndexManagerImpl implements IndexManager{
     private LuceneProperties luceneProperties;
 
     @Autowired
-    private AnalyzerInitializer analyzerInitializer;
+    private Analyzer smartChineseAnalyzer;
 
     @Override
     public void addDocument(String indexName, PostDoc postDoc) {
@@ -57,15 +60,13 @@ public class IndexManagerImpl implements IndexManager{
         Path idxPath = Paths.get(luceneProperties.getBasePath(), indexName);
         try(IndexReader reader = DirectoryReader.open(FSDirectory.open(idxPath)) ) {
             IndexSearcher searcher = new IndexSearcher(reader);
-            Analyzer analyzer = new SmartChineseAnalyzer();
-            analyzerInitializer.initialize(analyzer);
             // if specific field name doesn't exist, there is no any error.
-            QueryParser parser = new QueryParser(PostDoc.FLD_CONTENT, analyzer);
+            QueryParser parser = new QueryParser(PostDoc.FLD_CONTENT, smartChineseAnalyzer);
             Query query = parser.parse(keyword);
             TopDocs topDocs = searcher.search(query, 1000);
 //            logger.info("topDocs: {}", topDocs);
 //            logger.info("topDocs.totalHits: {}", topDocs.totalHits);
-            return assemblePaginationDoc(searcher, topDocs, pageSize, pageNbr);
+            return assemblePaginationDoc(reader, searcher, topDocs, pageSize, pageNbr);
         }
         catch (IOException | ParseException e) {
             log.error("", e);
@@ -73,15 +74,24 @@ public class IndexManagerImpl implements IndexManager{
         }
     }
 
-    private PaginationDoc<PostDoc> assemblePaginationDoc(IndexSearcher searcher, TopDocs topDocs, int pageSize, int pageNbr)
+    private PaginationDoc<PostDoc> assemblePaginationDoc(IndexReader reader, IndexSearcher searcher,
+                                                         TopDocs topDocs, int pageSize, int pageNbr)
             throws IOException {
         ScoreDoc[] scoreDoc = topDocs.scoreDocs;
         List<PostDoc> results = new ArrayList<>(pageSize);
         for (int i = (pageNbr - 1) * pageSize; i < scoreDoc.length; ++i) {
-            Document document = searcher.doc(scoreDoc[i].doc);
+            Document document = searcher.doc(scoreDoc[i].doc); // this set of fields is optional.
+            LeafReaderContext leafReaderContext = retrieveLeafReader(reader.leaves(), scoreDoc[i].doc);
+            // category_id
+            NumericDocValues docValuesCategoryId = DocValues.getNumeric(leafReaderContext.reader(), PostDoc.FLD_CATEGORY_ID);
+            docValuesCategoryId.advance(scoreDoc[i].doc - leafReaderContext.docBase);
+            // post_id
+            NumericDocValues docValuesPostId = DocValues.getNumeric(leafReaderContext.reader(), PostDoc.FLD_POST_ID);
+//            numericDocValues.advance(scoreDoc[i].doc);
+            docValuesPostId.advance(scoreDoc[i].doc - leafReaderContext.docBase);
             PostDoc doc = PostDoc.builder()
-                    .categoryId(document.getField(PostDoc.FLD_CATEGORY_ID).numericValue().longValue())
-                    .postId(document.getField(PostDoc.FLD_POST_ID).numericValue().longValue())
+                    .categoryId(docValuesCategoryId.longValue())
+                    .postId(docValuesPostId.longValue())
 //                    .title(document.get(PostDoc.FL))
                     .fileName(document.get(PostDoc.FLD_FILE_NAME))
                     .filePath(document.get(PostDoc.FLD_FILE_PATH))
@@ -97,4 +107,32 @@ public class IndexManagerImpl implements IndexManager{
                 .build();
         return pagination;
     }
+
+    private LeafReaderContext retrieveLeafReader(List<LeafReaderContext> leaves, int docID) {
+        int left = 0;
+        int right = leaves.size() - 1;
+        int mid = 0;
+        while (left < right) {
+            mid = (left + right) / 2;
+            int docBase = leaves.get(mid).docBase;
+            if (docID < docBase) {
+                right = mid - 1;
+            }
+            else if (docID > docBase) {
+                left = mid + 1;
+            }
+            else {
+                return leaves.get(mid);
+            }
+        }
+        // it is necessary to correct and adjust the left and right range
+        if (mid < leaves.size() - 1 && docID > leaves.get(mid + 1).docBase) {
+            ++mid;
+        }
+        if (mid >= 1 && docID < leaves.get(mid).docBase) {
+            --mid;
+        }
+        return leaves.get(mid);
+    }
+
 }

@@ -27,6 +27,7 @@ public class ForumPostServiceImpl implements ForumPostService {
         for(PostDoc postDoc : postDocList.getDocuments()) {
             ForumPostDTO dto = new ForumPostDTO();
             BeanUtils.copyProperties(postDoc, dto);
+            data.add(dto);
         }
         PaginationDTO<ForumPostDTO> paginationDTO = new PaginationDTO<>();
         BeanUtils.copyProperties(postDocList, paginationDTO);

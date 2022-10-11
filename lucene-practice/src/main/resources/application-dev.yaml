@@ -1,0 +1,6 @@
+spring:
+  profiles: dev
+
+infra:
+  lucene:
+    base-path: indices

@@ -79,12 +79,12 @@ public class SmartChineseAnalyzerInitializer implements AnalyzerInitializer {
 
             SmartChineseWordDictionary smartChineseWordDictionary = new SmartChineseWordDictionary(wordDict);
             smartChineseWordDictionary.initialize();
-            smartChineseWordDictionary.showWordItem();
+//            smartChineseWordDictionary.showWordItem();
 //            smartChineseWordDictionary.showWordItemCharArrayTable();
 
             NavigableSet<String> customWordsSet = loadCustomWordsSet();
             smartChineseWordDictionary.adjustWordDictionary(customWordsSet);
-            smartChineseWordDictionary.showWordItem();
+//            smartChineseWordDictionary.showWordItem();
         }
         catch (IOException e) {
             log.error("", e);
