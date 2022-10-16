@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class PostDoc {
+public class PostDoc extends BaseDoc {
 
     public static final String FLD_CATEGORY_ID = "category_id";
 

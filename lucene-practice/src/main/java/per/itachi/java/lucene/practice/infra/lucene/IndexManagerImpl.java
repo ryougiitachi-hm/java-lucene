@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.Analyzer;
@@ -38,6 +36,19 @@ public class IndexManagerImpl implements IndexManager{
 
     @Autowired
     private Analyzer smartChineseAnalyzer;
+
+    @Override
+    public void printIndexBasicInfo(String indexName) {
+        Path idxPath = Paths.get(luceneProperties.getBasePath(), indexName);
+        try(IndexReader reader = DirectoryReader.open(FSDirectory.open(idxPath)) ) {
+            log.info("The index name is {}, numDocs={}.", indexName, reader.numDocs());
+            log.info("The index name is {}, maxDoc={}.", indexName, reader.maxDoc());
+        }
+        catch (IOException e) {
+            log.error("", e);
+            throw new CommonBusinessException(e);
+        }
+    }
 
     @Override
     public void addDocument(String indexName, PostDoc postDoc) {
@@ -81,17 +92,11 @@ public class IndexManagerImpl implements IndexManager{
         List<PostDoc> results = new ArrayList<>(pageSize);
         for (int i = (pageNbr - 1) * pageSize; i < scoreDoc.length; ++i) {
             Document document = searcher.doc(scoreDoc[i].doc); // this set of fields is optional.
-            LeafReaderContext leafReaderContext = retrieveLeafReader(reader.leaves(), scoreDoc[i].doc);
-            // category_id
-            NumericDocValues docValuesCategoryId = DocValues.getNumeric(leafReaderContext.reader(), PostDoc.FLD_CATEGORY_ID);
-            docValuesCategoryId.advance(scoreDoc[i].doc - leafReaderContext.docBase);
-            // post_id
-            NumericDocValues docValuesPostId = DocValues.getNumeric(leafReaderContext.reader(), PostDoc.FLD_POST_ID);
-//            numericDocValues.advance(scoreDoc[i].doc);
-            docValuesPostId.advance(scoreDoc[i].doc - leafReaderContext.docBase);
+            long categoryId = getValueFromNumericDocValues(reader, scoreDoc[i].doc, PostDoc.FLD_CATEGORY_ID);
+            long postId = getValueFromNumericDocValues(reader, scoreDoc[i].doc, PostDoc.FLD_POST_ID);
             PostDoc doc = PostDoc.builder()
-                    .categoryId(docValuesCategoryId.longValue())
-                    .postId(docValuesPostId.longValue())
+                    .categoryId(categoryId)
+                    .postId(postId)
 //                    .title(document.get(PostDoc.FL))
                     .fileName(document.get(PostDoc.FLD_FILE_NAME))
                     .filePath(document.get(PostDoc.FLD_FILE_PATH))
@@ -108,7 +113,23 @@ public class IndexManagerImpl implements IndexManager{
         return pagination;
     }
 
+    @Override
+    public long getValueFromNumericDocValues(IndexReader reader, int docID, String fieldName) throws IOException {
+        LeafReaderContext leafReaderContext = retrieveLeafReader(reader.leaves(), docID);
+        NumericDocValues docValues = DocValues.getNumeric(leafReaderContext.reader(), fieldName);
+        docValues.advance(docID - leafReaderContext.docBase);
+        return docValues.longValue();
+    }
+
     private LeafReaderContext retrieveLeafReader(List<LeafReaderContext> leaves, int docID) {
+        int idxLeafReader = locateLeafReader(leaves, docID);
+        return leaves.get(idxLeafReader);
+    }
+
+    /**
+     * Use default level because of convenience for integration test.
+     * */
+    int locateLeafReader(List<LeafReaderContext> leaves, int docID) {
         int left = 0;
         int right = leaves.size() - 1;
         int mid = 0;
@@ -118,21 +139,20 @@ public class IndexManagerImpl implements IndexManager{
             if (docID < docBase) {
                 right = mid - 1;
             }
-            else if (docID > docBase) {
+            else if (docID > docBase) { // improvable and to be improved
                 left = mid + 1;
             }
             else {
-                return leaves.get(mid);
+                return mid;
             }
         }
         // it is necessary to correct and adjust the left and right range
-        if (mid < leaves.size() - 1 && docID > leaves.get(mid + 1).docBase) {
+        while (mid < leaves.size() - 1 && docID >= leaves.get(mid + 1).docBase) {
             ++mid;
         }
-        if (mid >= 1 && docID < leaves.get(mid).docBase) {
+        while (mid >= 1 && docID < leaves.get(mid).docBase) {
             --mid;
         }
-        return leaves.get(mid);
+        return mid;
     }
-
 }

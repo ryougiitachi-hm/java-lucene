@@ -10,6 +10,7 @@ import per.itachi.java.lucene.practice.app.dto.ForumPostDTO;
 import per.itachi.java.lucene.practice.app.dto.PaginationDTO;
 import per.itachi.java.lucene.practice.app.service.ForumPostService;
 import per.itachi.java.lucene.practice.infra.lucene.IndexManager;
+import per.itachi.java.lucene.practice.infra.lucene.dao.ForumPostIndexDAO;
 import per.itachi.java.lucene.practice.infra.lucene.entity.PaginationDoc;
 import per.itachi.java.lucene.practice.infra.lucene.entity.PostDoc;
 
@@ -19,6 +20,14 @@ public class ForumPostServiceImpl implements ForumPostService {
 
     @Resource
     private IndexManager indexManager;
+
+    @Resource
+    private ForumPostIndexDAO forumPostIndexDAO;
+
+    @Override
+    public void printIndexBasicInfo(String indexName) {
+        indexManager.printIndexBasicInfo(indexName);
+    }
 
     @Override
     public PaginationDTO<ForumPostDTO> queryDocumentsByPage(String indexName, String keyword, int pageSize, int pageNbr) {
@@ -34,4 +43,17 @@ public class ForumPostServiceImpl implements ForumPostService {
         paginationDTO.setData(data);
         return paginationDTO;
     }
+
+    @Override
+    public void rebuildIndex(String indexName, String newIndexName) {
+        forumPostIndexDAO.rebuildIndex(indexName, newIndexName);
+    }
+
+    /**
+     * rebuild index at high level with customization.
+     * */
+    @Override
+    public void rebuildIndexWithCustom(String indexName, String newIndexName) {
+    }
+
 }

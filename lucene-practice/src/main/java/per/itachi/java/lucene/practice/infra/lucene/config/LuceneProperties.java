@@ -10,6 +10,8 @@ public class LuceneProperties {
 
     private String basePath;
 
+    private int commitDocThreshold;
+
 //    private Map<String, AnalyzerInitializerProperties> analyzerInitializer;
 
     public static class AnalyzerInitializerProperties {

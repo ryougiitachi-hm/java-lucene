@@ -2,6 +2,7 @@ infra:
   lucene:
     # index path = <base-path>/<index-name(website-name)>
     base-path: indices
+    commit-doc-threshold: 100
     analyzer-initializer:
       smart-cn:
 #        index-table-size: 13000 # not necessary

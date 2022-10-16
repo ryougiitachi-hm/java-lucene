@@ -7,14 +7,24 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Map;
+import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import per.itachi.java.lucene.practice.common.exception.CommonBusinessException;
 import per.itachi.java.lucene.practice.infra.restful.HttpConstants;
+import per.itachi.java.lucene.practice.infra.restful.config.RestfulDownloaderProperties;
 
 @Slf4j
 @Component
 public class JdkRestfulDownloader implements RestfulDownloader{
+
+    @Autowired
+    private RestfulDownloaderProperties restfulDownloaderProperties;
+
+    @PostConstruct
+    public void init() {
+    }
 
     @Override
     public File downloadAsFile(String url, Map<String, String> headers, Path outputPath) {

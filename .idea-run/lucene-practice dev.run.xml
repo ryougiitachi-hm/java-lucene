@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="lucene-practice dev" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="per.itachi.java.lucene.practice.PracticeApplication" />
+    <module name="lucene-practice" />
+    <option name="VM_PARAMETERS" value="-Xmx512m -Dspring.profiles.active=dev" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/lucene-practice" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

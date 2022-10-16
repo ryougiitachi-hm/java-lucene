@@ -11,7 +11,7 @@ public class RestfulDownloaderProperties {
 
     private int defaultBufferSize;
 
-    private Map<String, String> sites;
+    private Map<String, DownloaderSiteProperties> sites;
 
     @Getter
     @Setter
